@@ -1,0 +1,128 @@
+import pyttsx3  # pip install pyttsx3
+import speech_recognition as sr  # pip install speechRecognition
+import datetime
+import wikipedia  # pip install wikipedia
+import webbrowser
+import os
+import smtplib
+import openai  # pip install openai
+
+# Set OpenAI API Key from environment variables
+openai.api_key = os.getenv('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')  # Fetch from environment variable
+
+# Initialize the pyttsx3 engine
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
+
+# Function to speak text
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+# Function to greet the user
+def wishMe():
+    hour = int(datetime.datetime.now().hour)
+    if hour >= 0 and hour < 12:
+        speak("Good Morning!")
+    elif hour >= 12 and hour < 18:
+        speak("Good Afternoon!")
+    else:
+        speak("Good Evening!")
+
+    speak("Hello Boss, my name is VISIGUIDE, how may I help you!")
+
+# Function to capture and return user's voice command
+def takeCommand():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {query}\n")
+    except Exception as e:
+        print("Say that again please...")
+        return "None"
+    return query
+
+# Function to send an email
+def sendEmail(to, content):
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login('your_email@gmail.com', 'your_app_password')  # Replace with your credentials
+    server.sendmail('your_email@gmail.com', to, content)
+    server.close()
+
+# Function to generate responses using OpenAI GPT
+def generate_response(prompt):
+    response = openai.Completion.create(
+        engine="text-davinci-003",  # You can use different models like "gpt-3.5-turbo" or others
+        prompt=prompt,
+        max_tokens=150
+    )
+    return response.choices[0].text.strip()
+
+if __name__ == "__main__":
+    wishMe()
+    while True:
+        query = takeCommand().lower()
+
+        # Handling different voice commands
+        if 'wikipedia' in query:
+            speak('Searching Wikipedia...')
+            query = query.replace("wikipedia", "")
+            results = wikipedia.summary(query, sentences=2)
+            speak("According to Wikipedia")
+            print(results)
+            speak(results)
+
+        elif 'generate a story' in query:
+            speak('Generating a story for you...')
+            prompt = "Generate a short story for a child."
+            story = generate_response(prompt)
+            print(story)
+            speak(story)
+
+        elif 'generate poem' in query:
+            speak('Generating a poem for you...')
+            prompt = "Generate a short poem about nature."
+            poem = generate_response(prompt)
+            print(poem)
+            speak(poem)
+
+        elif 'open youtube' in query:
+            webbrowser.open("youtube.com")
+
+        elif 'open google' in query:
+            webbrowser.open("google.com")
+
+        elif 'open stackoverflow' in query:
+            webbrowser.open("stackoverflow.com")
+
+        elif 'time' in query:
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")
+            speak(f"Sir, the time is {strTime}")
+
+        elif 'open code' in query:
+            codePath = "C:\\Users\\HP\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
+            os.startfile(codePath)
+
+        elif 'email to kasera' in query:
+            try:
+                speak("What should I say?")
+                content = takeCommand()
+                to = "himanshukasera2238@gmail.com"  # Replace with recipient's email
+                sendEmail(to, content)
+                speak("Email has been sent!")
+            except Exception as e:
+                print(e)
+                speak("Sorry, I am not able to send this email.")
+
+        elif 'quit' in query:
+            speak("Goodbye, Boss!")
+            break
